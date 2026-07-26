@@ -879,13 +879,13 @@ function HistoryTab(){
 }
 
 // ── ROOT ──────────────────────────────────────────────────────────────────────
-const TABS=[
-  {key:"schedule",label:"Schedule", icon:"📅"},
-  {key:"mobility",label:"Mobility", icon:"🦵"},
-  {key:"gym",     label:"Gym",      icon:"🏋️"},
-  {key:"log",     label:"Log",      icon:"✅"},
-  {key:"weight",  label:"Weight",   icon:"⚖️"},
-  {key:"history", label:"History",  icon:"📊"},
+const TABS = [
+  { key: "schedule", label: "Schedule" },
+  { key: "mobility", label: "Mobility" },
+  { key: "gym",      label: "Gym" },
+  { key: "log",      label: "Log" },
+  { key: "weight",   label: "Weight" },
+  { key: "history",  label: "History" },
 ];
 
 export default function App(){
@@ -897,7 +897,7 @@ export default function App(){
         borderBottom:`1px solid ${C.border}`,padding:"22px 18px 16px"}}>
         <div style={{maxWidth:720,margin:"0 auto"}}>
           <div style={{fontSize:10,letterSpacing:"0.2em",color:C.textDim,textTransform:"uppercase",marginBottom:4}}>Training Program</div>
-          <h1 style={{margin:0,fontSize:22,fontWeight:700,letterSpacing:"-0.02em",color:C.textPrimary}}>Estian's Dashboard</h1>
+          <h1 style={{margin:0,fontSize:22,fontWeight:700,letterSpacing:"-0.02em",color:C.textPrimary}}>Dashboard</h1>
           <p style={{margin:"4px 0 0",fontSize:12,color:C.textSec}}>Strength · Aesthetics · Running · Surfing</p>
         </div>
       </div>
