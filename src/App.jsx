@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { Activity, BarChart3, CalendarDays, ClipboardList, Dumbbell, Scale } from "lucide-react";
 
 // ── COLOURS ───────────────────────────────────────────────────────────────────
 const C = {
@@ -497,15 +498,8 @@ function GymTab(){
   const [liftLogs,setLiftLogs]=useState(()=>LS.get("lift_logs",{}));
   const [logEx,setLogEx]=useState(null);
   const [form,setForm]=useState({date:todayStr(),weight:"",sets:"",reps:""});
+  const [savedFlash,setSavedFlash]=useState(false);
   const plan=GYM_PLANS[active];
-
-  const saveLog=()=>{
-    if(!form.weight||!logEx)return;
-    const entry={date:form.date,weight:parseFloat(form.weight),sets:form.sets,reps:form.reps,id:Date.now()};
-    const upd={...liftLogs,[logEx]:[...(liftLogs[logEx]||[]),entry]};
-    setLiftLogs(upd); LS.set("lift_logs",upd);
-    setLogEx(null); setForm({date:todayStr(),weight:"",sets:"",reps:""});
-  };
 
   const getLatest=(name)=>{
     const entries=liftLogs[name]||[];
@@ -513,11 +507,46 @@ function GymTab(){
     return [...entries].sort((a,b)=>b.date.localeCompare(a.date))[0];
   };
 
+  const openLog=(exName)=>{
+    const latest=getLatest(exName);
+    setLogEx(exName);
+    setSavedFlash(false);
+    // Pre-fill with last used weight, sets and reps — user just adjusts if different
+    setForm({
+      date:todayStr(),
+      weight: latest?.weight ? String(latest.weight) : "",
+      sets:   latest?.sets   ? String(latest.sets)   : "3",
+      reps:   latest?.reps   ? String(latest.reps)   : "10",
+    });
+  };
+
+  const saveLog=()=>{
+    if(!form.weight||!logEx)return;
+    const entry={
+      date:form.date,
+      weight:parseFloat(form.weight),
+      sets:form.sets||"3",
+      reps:form.reps||"10",
+      id:Date.now()
+    };
+    const upd={...liftLogs,[logEx]:[...(liftLogs[logEx]||[]),entry]};
+    setLiftLogs(upd);
+    LS.set("lift_logs",upd);
+    // Flash saved, keep form open with same values so user can quickly log next set variation
+    setSavedFlash(true);
+    setTimeout(()=>setSavedFlash(false),1800);
+  };
+
+  const delEntry=(exName,id)=>{
+    const upd={...liftLogs,[exName]:(liftLogs[exName]||[]).filter(e=>e.id!==id)};
+    setLiftLogs(upd); LS.set("lift_logs",upd);
+  };
+
   return(
     <div>
       <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:16}}>
         {Object.keys(GYM_PLANS).map(p=>(
-          <Pill key={p} active={active===p} color={plan.color} onClick={()=>{setActive(p);setLogEx(null);}}>{p}</Pill>
+          <Pill key={p} active={active===p} color={plan.color} onClick={()=>{setActive(p);setLogEx(null);setSavedFlash(false);}}>{p}</Pill>
         ))}
       </div>
       <Card style={{marginBottom:14,background:C.bg2,borderLeft:`3px solid ${plan.color}`}}>
@@ -525,25 +554,76 @@ function GymTab(){
         <div style={{fontSize:12,color:C.textSec,marginTop:2}}>{plan.muscles}</div>
       </Card>
 
+      {/* Sticky log form — stays open until user taps Done */}
       {logEx&&(
-        <Card style={{marginBottom:14,border:`1px solid ${plan.color}44`}}>
-          <SecLabel>Log — {logEx}</SecLabel>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8,marginBottom:10}}>
-            {[{l:"Date",f:"date",t:"date",p:""},{l:"kg",f:"weight",t:"number",p:"e.g. 50"},{l:"Sets",f:"sets",t:"number",p:"3"},{l:"Reps",f:"reps",t:"number",p:"10"}].map(x=>(
+        <Card style={{marginBottom:14,border:`1px solid ${plan.color}66`,background:C.bg2}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+            <div style={{fontSize:13,fontWeight:700,color:plan.color,flex:1,paddingRight:8}}>{logEx}</div>
+            <button onClick={()=>{setLogEx(null);setSavedFlash(false);}} style={{fontSize:11,background:"none",
+              border:`1px solid ${C.border}`,borderRadius:6,padding:"4px 10px",color:C.textSec,cursor:"pointer"}}>Done</button>
+          </div>
+
+          {/* Big easy-tap inputs */}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:12}}>
+            {[
+              {l:"Weight (kg)",f:"weight",t:"number",p:"e.g. 50",big:true},
+              {l:"Sets",      f:"sets",  t:"number",p:"3",      big:false},
+              {l:"Reps",      f:"reps",  t:"number",p:"10",     big:false},
+            ].map(x=>(
               <div key={x.f}>
-                <div style={{fontSize:10,color:C.textDim,marginBottom:3}}>{x.l}</div>
-                <input type={x.t} value={form[x.f]} placeholder={x.p} onChange={e=>setForm({...form,[x.f]:e.target.value})}
-                  style={{width:"100%",background:C.bg0,border:`1px solid ${C.border}`,borderRadius:7,
-                    color:C.textPrimary,padding:"7px 8px",fontSize:12,boxSizing:"border-box"}}/>
+                <div style={{fontSize:10,color:C.textDim,marginBottom:4,textTransform:"uppercase",letterSpacing:"0.08em"}}>{x.l}</div>
+                <input
+                  type={x.t}
+                  value={form[x.f]}
+                  placeholder={x.p}
+                  onChange={e=>setForm({...form,[x.f]:e.target.value})}
+                  style={{
+                    width:"100%",background:C.bg0,border:`1px solid ${x.big?plan.color+"66":C.border}`,
+                    borderRadius:9,color:x.big?plan.color:C.textPrimary,
+                    padding:x.big?"12px 8px":"10px 8px",
+                    fontSize:x.big?22:16,fontWeight:x.big?700:500,
+                    textAlign:"center",boxSizing:"border-box",
+                    outline:"none",
+                  }}
+                />
               </div>
             ))}
           </div>
-          <div style={{display:"flex",gap:8}}>
-            <button onClick={saveLog} style={{flex:1,padding:"9px",borderRadius:7,border:"none",
-              background:plan.color,color:C.bg0,fontSize:13,fontWeight:700,cursor:"pointer"}}>Save</button>
-            <button onClick={()=>setLogEx(null)} style={{padding:"9px 14px",borderRadius:7,
-              border:`1px solid ${C.border}`,background:"none",color:C.textSec,cursor:"pointer"}}>Cancel</button>
+
+          {/* Date row */}
+          <div style={{marginBottom:12}}>
+            <div style={{fontSize:10,color:C.textDim,marginBottom:4,textTransform:"uppercase",letterSpacing:"0.08em"}}>Date</div>
+            <input type="date" value={form.date} onChange={e=>setForm({...form,date:e.target.value})}
+              style={{background:C.bg0,border:`1px solid ${C.border}`,borderRadius:7,
+                color:C.textPrimary,padding:"7px 10px",fontSize:12,width:"100%",boxSizing:"border-box"}}/>
           </div>
+
+          <button onClick={saveLog} style={{
+            width:"100%",padding:"13px",borderRadius:9,border:"none",cursor:"pointer",
+            background:savedFlash?C.pull:plan.color,
+            color:C.bg0,fontSize:15,fontWeight:700,
+            transition:"background 0.2s",
+          }}>
+            {savedFlash?"✓ Saved!":"Save Set"}
+          </button>
+
+          {/* Today's entries for this exercise */}
+          {(liftLogs[logEx]||[]).filter(e=>e.date===form.date).length>0&&(
+            <div style={{marginTop:12,borderTop:`1px solid ${C.border}`,paddingTop:10}}>
+              <div style={{fontSize:10,color:C.textDim,marginBottom:7,textTransform:"uppercase",letterSpacing:"0.08em"}}>Logged today</div>
+              <div style={{display:"flex",flexDirection:"column",gap:5}}>
+                {(liftLogs[logEx]||[]).filter(e=>e.date===form.date).map(e=>(
+                  <div key={e.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",
+                    background:C.bg3,borderRadius:7,padding:"7px 10px"}}>
+                    <span style={{fontSize:13,fontWeight:700,color:plan.color}}>{e.weight}kg</span>
+                    <span style={{fontSize:12,color:C.textSec}}>{e.sets||"?"}×{e.reps||"?"} reps</span>
+                    <button onClick={()=>delEntry(logEx,e.id)} style={{background:"none",border:"none",
+                      color:C.textDim,fontSize:15,cursor:"pointer",padding:"0 4px"}}>×</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </Card>
       )}
 
@@ -552,37 +632,45 @@ function GymTab(){
           const latest=getLatest(ex.name);
           const targets=LIFT_TARGETS[ex.name]||[];
           const next=targets.find(t=>!latest||t.kg>latest.weight);
+          const isActive=logEx===ex.name;
           return(
-            <Card key={i}>
+            <Card key={i} style={{borderColor:isActive?plan.color+"55":C.border}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8,marginBottom:6}}>
                 <div style={{fontSize:13,fontWeight:600,color:C.textPrimary}}>
                   <span style={{color:plan.color,fontSize:11,marginRight:7,fontWeight:700}}>{String(i+1).padStart(2,"0")}</span>{ex.name}
                 </div>
                 <Tag label={ex.sets} color={plan.color}/>
               </div>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:6}}>
+
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:6}}>
                 <div>
-                  <div style={{fontSize:11,color:C.textDim}}>Target weight</div>
-                  <div style={{fontSize:12,color:C.textSec}}>{ex.weight}</div>
+                  <div style={{fontSize:10,color:C.textDim}}>Plan target</div>
+                  <div style={{fontSize:12,color:C.textSec,marginTop:1}}>{ex.weight}</div>
                 </div>
-                {latest&&(
-                  <div style={{textAlign:"center"}}>
-                    <div style={{fontSize:11,color:C.textDim}}>Last logged</div>
-                    <div style={{fontSize:13,fontWeight:700,color:plan.color}}>{latest.weight}kg <span style={{fontSize:10,color:C.textDim,fontWeight:400}}>{latest.sets||"?"}×{latest.reps||"?"}</span></div>
-                  </div>
-                )}
-                {next&&(
-                  <div style={{textAlign:"right"}}>
-                    <div style={{fontSize:11,color:C.textDim}}>Next target</div>
-                    <div style={{fontSize:13,fontWeight:700,color:C.legs}}>{next.kg}kg <Tag label={next.ph} color={C.legs}/></div>
-                  </div>
-                )}
+                <div style={{textAlign:"center"}}>
+                  <div style={{fontSize:10,color:C.textDim}}>Last logged</div>
+                  {latest
+                    ? <div style={{fontSize:13,fontWeight:700,color:plan.color,marginTop:1}}>{latest.weight}kg <span style={{fontSize:10,color:C.textDim,fontWeight:400}}>{latest.sets||"?"}×{latest.reps||"?"}</span></div>
+                    : <div style={{fontSize:12,color:C.textDim,marginTop:1}}>—</div>
+                  }
+                </div>
+                <div style={{textAlign:"right"}}>
+                  <div style={{fontSize:10,color:C.textDim}}>Next target</div>
+                  {next
+                    ? <div style={{fontSize:12,fontWeight:700,color:C.legs,marginTop:1}}>{next.kg}kg <Tag label={next.ph} color={C.legs}/></div>
+                    : <div style={{fontSize:12,color:C.pull,marginTop:1}}>🏆 All done</div>
+                  }
+                </div>
               </div>
-              {ex.note&&<div style={{fontSize:11,color:C.textDim,marginTop:6,fontStyle:"italic"}}>💡 {ex.note}</div>}
-              <button onClick={()=>{setLogEx(ex.name);setForm({date:todayStr(),weight:latest?String(latest.weight):"",sets:latest?String(latest.sets):"",reps:latest?String(latest.reps):"",});}}
-                style={{marginTop:10,width:"100%",padding:"8px",borderRadius:7,cursor:"pointer",
-                  background:plan.color+"18",border:`1px solid ${plan.color}44`,color:plan.color,fontSize:12,fontWeight:600}}>
-                {latest?"+ Log New Set":"+ Log First Set"}
+
+              {ex.note&&<div style={{fontSize:11,color:C.textDim,marginBottom:8,fontStyle:"italic"}}>💡 {ex.note}</div>}
+
+              <button onClick={()=>isActive?setLogEx(null):openLog(ex.name)}
+                style={{width:"100%",padding:"9px",borderRadius:7,cursor:"pointer",
+                  background:isActive?plan.color+"33":plan.color+"18",
+                  border:`1px solid ${plan.color}${isActive?"99":"44"}`,
+                  color:plan.color,fontSize:12,fontWeight:600}}>
+                {isActive?"▲ Close":"+ Log Set"}
               </button>
             </Card>
           );
@@ -879,13 +967,13 @@ function HistoryTab(){
 }
 
 // ── ROOT ──────────────────────────────────────────────────────────────────────
-const TABS = [
-  { key: "schedule", label: "Schedule" },
-  { key: "mobility", label: "Mobility" },
-  { key: "gym",      label: "Gym" },
-  { key: "log",      label: "Log" },
-  { key: "weight",   label: "Weight" },
-  { key: "history",  label: "History" },
+const TABS=[
+  {key:"schedule",label:"Schedule", icon:CalendarDays},
+  {key:"mobility",label:"Mobility", icon:Activity},
+  {key:"gym",     label:"Gym",      icon:Dumbbell},
+  {key:"log",     label:"Log",      icon:ClipboardList},
+  {key:"weight",  label:"Weight",   icon:Scale},
+  {key:"history", label:"History",  icon:BarChart3},
 ];
 
 export default function App(){
@@ -903,14 +991,19 @@ export default function App(){
       </div>
       <div style={{background:"#050d1a",borderBottom:`1px solid ${C.border}`,position:"sticky",top:0,zIndex:10}}>
         <div style={{maxWidth:720,margin:"0 auto",display:"flex",overflowX:"auto"}}>
-          {TABS.map(t=>(
-            <button key={t.key} onClick={()=>setTab(t.key)} style={{background:"none",border:"none",
-              cursor:"pointer",flexShrink:0,padding:"11px 13px",fontSize:12,fontWeight:500,
-              color:tab===t.key?C.textPrimary:C.textSec,
-              borderBottom:tab===t.key?`2px solid ${C.accent}`:"2px solid transparent"}}>
-              {t.icon} {t.label}
-            </button>
-          ))}
+          {TABS.map(t=>{
+            const Icon=t.icon;
+            return (
+              <button key={t.key} onClick={()=>setTab(t.key)} style={{background:"none",border:"none",
+                cursor:"pointer",flexShrink:0,padding:"11px 13px",fontSize:12,fontWeight:500,
+                color:tab===t.key?C.textPrimary:C.textSec,
+                borderBottom:tab===t.key?`2px solid ${C.accent}`:"2px solid transparent",
+                display:"inline-flex",alignItems:"center",gap:6}}>
+                <Icon size={14} strokeWidth={2.2} />
+                <span>{t.label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
       <div style={{maxWidth:720,margin:"0 auto",padding:"18px 13px"}}>
