@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Activity, BarChart3, CalendarDays, ClipboardList,
   Dumbbell, Scale, TrendingUp
 } from "lucide-react";
 
 // ── COLOURS ───────────────────────────────────────────────────────────────────
-const C = {
+const DEFAULT_THEME = {
   bg0:"#03060f", bg1:"#060e1c", bg2:"#0b1a2e", bg3:"#071221",
   border:"#0f2d4a", borderHi:"#1a4060",
   textPrimary:"#e8f4ff", textSec:"#5b8db8", textDim:"#2a4f6e",
@@ -13,6 +13,76 @@ const C = {
   flex:"#f472b6", rest:"#94a3b8", surf:"#00c2e0",
   accent:"#00c2e0", weight:"#f472b6",
 };
+
+const THEMES = {
+  cyberpunk:{
+    bg0:"#08070c", bg1:"#0f0e17", bg2:"#1a1926", bg3:"#141320",
+    border:"#2d2a45", borderHi:"#48436c",
+    textPrimary:"#f2f1f8", textSec:"#928dab", textDim:"#544f73",
+    push:"#ff0055", pull:"#00ff66", legs:"#ffe600", run:"#9d00ff",
+    flex:"#ff00aa", rest:"#5d637a", surf:"#00f0ff",
+    accent:"#00f0ff", weight:"#ff0055",
+  },
+  eclipse:{
+    bg0:"#0b0d14", bg1:"#121522", bg2:"#1b2230", bg3:"#161b28",
+    border:"#2b3145", borderHi:"#3f4968",
+    textPrimary:"#f4f7ff", textSec:"#8e98b8", textDim:"#5f6985",
+    push:"#ff7b54", pull:"#34d399", legs:"#fbbf24", run:"#8b5cf6",
+    flex:"#ec4899", rest:"#64748b", surf:"#22d3ee",
+    accent:"#22d3ee", weight:"#ff7b54",
+  },
+  default:{...DEFAULT_THEME},
+  seaGlassObsidian:{
+    bg0:"#0e1312", bg1:"#141c1a", bg2:"#1d2926", bg3:"#182220",
+    border:"#283a36", borderHi:"#3d5751",
+    textPrimary:"#e3ece9", textSec:"#87a39b", textDim:"#4f6e66",
+    push:"#e0633b", pull:"#4ea87f", legs:"#d99d38", run:"#8f73be",
+    flex:"#d67087", rest:"#697c77", surf:"#3bb2b8",
+    accent:"#c3dfc8", weight:"#d67087",
+  },
+  midnightOchre:{
+    bg0:"#121214", bg1:"#191a1e", bg2:"#23252a", bg3:"#1d1e23",
+    border:"#32353e", borderHi:"#484d5a",
+    textPrimary:"#edeef2", textSec:"#8e93a3", textDim:"#545866",
+    push:"#d65a31", pull:"#38a37f", legs:"#d4a373", run:"#9a8c7d",
+    flex:"#c05c7e", rest:"#6c7280", surf:"#2a9d8f",
+    accent:"#d4a373", weight:"#d65a31",
+  },
+  deepPacific:{
+    bg0:"#091011", bg1:"#101a1c", bg2:"#18272a", bg3:"#132023",
+    border:"#21383c", borderHi:"#315258",
+    textPrimary:"#e4ecee", textSec:"#7b9a9e", textDim:"#466367",
+    push:"#e07a5f", pull:"#52a382", legs:"#f2cc8f", run:"#8d81ac",
+    flex:"#e27396", rest:"#5d7377", surf:"#3dccc7",
+    accent:"#3dccc7", weight:"#e07a5f",
+  },
+  coastalMist:{
+    bg0:"#f3f5f3", bg1:"#e5eae6", bg2:"#d5dfd7", bg3:"#fafbf9",
+    border:"#bdc2bd", borderHi:"#9ba39b",
+    textPrimary:"#1b2926", textSec:"#475955", textDim:"#81918d",
+    push:"#ca532a", pull:"#2f855a", legs:"#c0832a", run:"#72579b",
+    flex:"#be4f69", rest:"#697975", surf:"#1d878c",
+    accent:"#2f855a", weight:"#ca532a",
+  },
+  architecturalParchment:{
+    bg0:"#f4f1ea", bg1:"#e8e3d8", bg2:"#dbd4c4", bg3:"#faf8f4",
+    border:"#c7beab", borderHi:"#a39883",
+    textPrimary:"#22201d", textSec:"#5a544b", textDim:"#948a7b",
+    push:"#c84b31", pull:"#3a7d44", legs:"#b87d2b", run:"#70527f",
+    flex:"#b55364", rest:"#736b5e", surf:"#2a7b88",
+    accent:"#b87d2b", weight:"#c84b31",
+  },
+  industrialMonolith:{
+    bg0:"#eeefee", bg1:"#e0e2e0", bg2:"#d0d4d0", bg3:"#f8f9f8",
+    border:"#b8bcb8", borderHi:"#929692",
+    textPrimary:"#141614", textSec:"#424642", textDim:"#7e827e",
+    push:"#bd4a22", pull:"#2b7d5a", legs:"#b38218", run:"#6b5094",
+    flex:"#b04b68", rest:"#656a65", surf:"#1d7d91",
+    accent:"#1d7d91", weight:"#bd4a22",
+  },
+};
+
+const C = {...DEFAULT_THEME};
 
 // ── LOCAL STORAGE ─────────────────────────────────────────────────────────────
 const LS = {
@@ -29,7 +99,7 @@ const weekLabel = k=>{ const s=new Date(k+"T12:00:00"),e=new Date(s);e.setDate(s
 // ── GYM DATA ─────────────────────────────────────────────────────────────────
 const GYM_PLANS = {
   "Push Day": {
-    color:"#ff6b35", muscles:"Chest · Shoulders · Triceps",
+    color:C.push, muscles:"Chest · Shoulders · Triceps",
     exercises:[
       {name:"Incline Barbell Bench Press", sets:"1 warm-up + 4×10", weight:"Start ~45kg", note:"Control the eccentric (3s down)"},
       {name:"Flat Dumbbell Bench Press",   sets:"3×10",  weight:"20kg/hand",  note:"Full ROM, pause at bottom"},
@@ -40,7 +110,7 @@ const GYM_PLANS = {
     ]
   },
   "Push Day B": {
-    color:"#ff6b35", muscles:"Chest · Shoulders · Triceps",
+    color:C.push, muscles:"Chest · Shoulders · Triceps",
     exercises:[
       {name:"Smith Machine Bench Press",   sets:"4×10",  weight:"~50kg",      note:"Use smith if bench is taken"},
       {name:"Incline Dumbbell Press",      sets:"3×12",  weight:"18–20kg/h",  note:"30° incline"},
@@ -51,7 +121,7 @@ const GYM_PLANS = {
     ]
   },
   "Pull Day": {
-    color:"#39d353", muscles:"Back · Biceps · Rear Delts",
+    color:C.pull, muscles:"Back · Biceps · Rear Delts",
     exercises:[
       {name:"Lat Pulldown",                sets:"1 warm-up + 4×10", weight:"60→65kg",  note:"Drive elbows down"},
       {name:"Bent Over Barbell Row",       sets:"4×10",  weight:"40–50kg",    note:"Hinge at hips, neutral spine"},
@@ -63,7 +133,7 @@ const GYM_PLANS = {
     ]
   },
   "Pull Day B": {
-    color:"#39d353", muscles:"Back · Biceps · Rear Delts",
+    color:C.pull, muscles:"Back · Biceps · Rear Delts",
     exercises:[
       {name:"Wide Grip Lat Pulldown",      sets:"4×10",    weight:"55–65kg",  note:"Stretch lats at top"},
       {name:"Single Arm DB Row",           sets:"3×10 ea", weight:"20–24kg",  note:"Full ROM, drive elbow back"},
@@ -75,7 +145,7 @@ const GYM_PLANS = {
     ]
   },
   "Legs Day": {
-    color:"#f5c518", muscles:"Quads · Hamstrings · Glutes · Calves",
+    color:C.legs, muscles:"Quads · Hamstrings · Glutes · Calves",
     exercises:[
       {name:"Smith Machine Squat",         sets:"1 warm-up + 4×10", weight:"40–50kg",    note:"Feet fwd, depth to parallel"},
       {name:"Goblet Squat / Leg Press",    sets:"3×12",  weight:"16–20kg DB", note:"Build form first"},
@@ -90,7 +160,7 @@ const GYM_PLANS = {
 // ── MOBILITY DATA ─────────────────────────────────────────────────────────────
 const MOBILITY = {
   ankle:{
-    color:"#00c2e0", icon:"🦶",
+    color:C.accent, icon:"🦶",
     exercises:[
       {name:"Ankle Circles",          reps:"20 each direction, each foot", note:"Seated or lying. Slow, full ROM."},
       {name:"Alphabet Tracing",       reps:"A–Z once per foot",            note:"Draw the alphabet with your big toe in the air."},
@@ -101,7 +171,7 @@ const MOBILITY = {
     ]
   },
   hip:{
-    color:"#f472b6", icon:"🍑",
+    color:C.flex, icon:"🍑",
     exercises:[
       {name:"90/90 Hip Stretch",        reps:"60s each side",   note:"Sit on floor, both knees at 90°. Lean into front hip."},
       {name:"Hip Flexor Lunge Stretch", reps:"60s each side",   note:"Low lunge, push hips fwd. Tuck pelvis under."},
@@ -112,7 +182,7 @@ const MOBILITY = {
     ]
   },
   spine:{
-    color:"#f5c518", icon:"🦴",
+    color:C.legs, icon:"🦴",
     exercises:[
       {name:"Cat-Cow",                       reps:"10 slow cycles",    note:"On all fours. Breathe in on cow, out on cat."},
       {name:"Thoracic Extension (foam roller)",reps:"10 reps, hold 5s",note:"Mid-back on roller, arms crossed, extend over it."},
@@ -160,19 +230,46 @@ const LIFT_TARGETS = {
   "Standing Calf Raise":        [{ph:"Ph1",kg:0}, {ph:"Ph2",kg:20},{ph:"Ph3",kg:40},{ph:"Ph4",kg:60}],
 };
 
+const THEME_OPTIONS = [
+  {key:"cyberpunk", label:"Cyberpunk"},
+  {key:"eclipse", label:"Eclipse"},
+  {key:"seaGlassObsidian", label:"Sea Glass"},
+  {key:"midnightOchre", label:"Midnight"},
+  {key:"deepPacific", label:"Pacific"},
+  {key:"coastalMist", label:"Coastal"},
+  {key:"architecturalParchment", label:"Parchment"},
+  {key:"industrialMonolith", label:"Monolith"},
+];
+
+const applyTheme = (themeKey) => {
+  const palette = THEMES[themeKey] || THEMES.default;
+  Object.assign(C, palette);
+  Object.entries(GYM_PLANS).forEach(([name, plan]) => {
+    if (name.includes("Push")) plan.color = C.push;
+    else if (name.includes("Pull")) plan.color = C.pull;
+    else if (name.includes("Legs")) plan.color = C.legs;
+  });
+  MOBILITY.ankle.color = C.accent;
+  MOBILITY.hip.color = C.flex;
+  MOBILITY.spine.color = C.legs;
+};
+
+const initialThemeKey = LS.get("theme", "cyberpunk");
+applyTheme(initialThemeKey);
+
 // ── SHARED COMPONENTS ─────────────────────────────────────────────────────────
 const Card=({children,style={}})=>(
-  <div style={{background:C.bg3,border:`1px solid ${C.border}`,borderRadius:12,padding:"13px 15px",...style}}>{children}</div>
+  <div style={{background:C.bg3,border:`1px solid ${C.border}`,borderRadius:12,padding:"13px 15px",transition:"background-color 140ms ease, border-color 140ms ease, color 140ms ease",...style}}>{children}</div>
 );
 const SecLabel=({children,style={}})=>(
-  <div style={{fontSize:11,textTransform:"uppercase",letterSpacing:"0.14em",color:C.textDim,marginBottom:9,fontWeight:600,...style}}>{children}</div>
+  <div style={{fontSize:11,textTransform:"uppercase",letterSpacing:"0.14em",color:C.textDim,marginBottom:9,fontWeight:600,transition:"color 140ms ease",...style}}>{children}</div>
 );
 const Tag=({label,color})=>(
-  <span style={{fontSize:10,padding:"2px 7px",borderRadius:4,fontWeight:700,letterSpacing:"0.05em",background:color+"22",color}}>{label}</span>
+  <span style={{fontSize:10,padding:"2px 7px",borderRadius:4,fontWeight:700,letterSpacing:"0.05em",background:color+"22",color,transition:"background-color 140ms ease, color 140ms ease"}}>{label}</span>
 );
 const Pill=({children,active,color,onClick})=>(
   <button onClick={onClick} style={{background:active?C.bg2:"transparent",border:`1px solid ${active?color+"66":C.border}`,
-    borderRadius:8,padding:"6px 12px",cursor:"pointer",color:active?color:C.textSec,fontSize:12,fontWeight:500}}>{children}</button>
+    borderRadius:8,padding:"6px 12px",cursor:"pointer",color:active?color:C.textSec,fontSize:12,fontWeight:500,transition:"background-color 140ms ease, border-color 140ms ease, color 140ms ease"}}>{children}</button>
 );
 
 // ── BAR CHART ─────────────────────────────────────────────────────────────────
@@ -1003,19 +1100,41 @@ const TABS=[
 
 export default function App(){
   const [tab,setTab]=useState("schedule");
+  const [themeKey,setThemeKey]=useState(initialThemeKey);
+  const [isTransitioning,setIsTransitioning]=useState(false);
+
+  useEffect(()=>{
+    setIsTransitioning(true);
+    const timeout=setTimeout(()=>{
+      applyTheme(themeKey);
+      LS.set("theme", themeKey);
+      setIsTransitioning(false);
+    }, 90);
+    return ()=>clearTimeout(timeout);
+  }, [themeKey]);
+
   return(
-    <div style={{minHeight:"100vh",background:C.bg0,color:C.textPrimary,fontFamily:"'DM Sans','Helvetica Neue',sans-serif",paddingBottom:80}}>
-      <div style={{background:"linear-gradient(135deg,#04111f 0%,#020a16 100%)",borderBottom:`1px solid ${C.border}`,padding:"22px 18px 16px"}}>
+    <div style={{minHeight:"100vh",background:C.bg0,color:C.textPrimary,fontFamily:"'DM Sans','Helvetica Neue',sans-serif",paddingBottom:80,transition:"background-color 140ms ease, color 140ms ease",position:"relative",overflow:"hidden"}}>
+      <div style={{position:"absolute",inset:0,background:C.bg0,opacity:isTransitioning?1:0,transition:"opacity 140ms ease",pointerEvents:"none",zIndex:20}} />
+      <div style={{background:`linear-gradient(135deg, ${C.bg2} 0%, ${C.bg0} 100%)`,borderBottom:`1px solid ${C.border}`,padding:"22px 18px 16px",transition:"background 140ms ease, border-color 140ms ease"}}>
         <div style={{maxWidth:720,margin:"0 auto"}}>
           <div style={{fontSize:10,letterSpacing:"0.2em",color:C.textDim,textTransform:"uppercase",marginBottom:4}}>Training Program</div>
           <h1 style={{margin:0,fontSize:22,fontWeight:700,letterSpacing:"-0.02em",color:C.textPrimary}}>Dashboard</h1>
           <p style={{margin:"4px 0 0",fontSize:12,color:C.textSec}}>Strength · Aesthetics · Running · Surfing</p>
+          <div style={{marginTop:12,display:"flex",flexWrap:"wrap",gap:8,alignItems:"center"}}>
+            <span style={{fontSize:11,letterSpacing:"0.12em",textTransform:"uppercase",color:C.textDim}}>Theme</span>
+            <select value={themeKey} onChange={(e)=>setThemeKey(e.target.value)} style={{background:C.bg2,border:`1px solid ${C.border}`,borderRadius:999,padding:"7px 10px",color:C.textPrimary,fontSize:11,fontWeight:600,outline:"none",transition:"background-color 140ms ease, border-color 140ms ease, color 140ms ease"}}>
+              {THEME_OPTIONS.map((option)=>(
+                <option key={option.key} value={option.key}>{option.label}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
-      <div style={{background:"#050d1a",borderBottom:`1px solid ${C.border}`,position:"sticky",top:0,zIndex:10}}>
+      <div style={{background:C.bg1,borderBottom:`1px solid ${C.border}`,position:"sticky",top:0,zIndex:10,transition:"background-color 140ms ease, border-color 140ms ease"}}>
         <div style={{maxWidth:720,margin:"0 auto",display:"flex",overflowX:"auto"}}>
           {TABS.map(({key,label,Icon})=>(
-            <button key={key} onClick={()=>setTab(key)} style={{background:"none",border:"none",cursor:"pointer",flexShrink:0,padding:"11px 13px",fontSize:12,fontWeight:500,color:tab===key?C.textPrimary:C.textSec,borderBottom:tab===key?`2px solid ${C.accent}`:"2px solid transparent",display:"inline-flex",alignItems:"center",gap:6}}>
+            <button key={key} onClick={()=>setTab(key)} style={{background:"none",border:"none",cursor:"pointer",flexShrink:0,padding:"11px 13px",fontSize:12,fontWeight:500,color:tab===key?C.textPrimary:C.textSec,borderBottom:tab===key?`2px solid ${C.accent}`:"2px solid transparent",display:"inline-flex",alignItems:"center",gap:6,transition:"color 140ms ease, border-color 140ms ease"}}>
               <Icon size={14} strokeWidth={2.2}/>
               <span>{label}</span>
             </button>
