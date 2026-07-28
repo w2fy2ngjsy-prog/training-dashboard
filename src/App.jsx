@@ -933,7 +933,7 @@ function WeightTab(){
       <Card style={{marginBottom:14}}>
         <SecLabel>Log Weight</SecLabel>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr auto",gap:8,alignItems:"end"}}>
-          <div><div style={{fontSize:10,color:C.textDim,marginBottom:3}}>Date</div><input type="date" value={date_[0]} onChange={e=>setDate(e.target.value)} style={inp()}/></div>
+          <div><div style={{fontSize:10,color:C.textDim,marginBottom:3}}>Date</div><input type="date" value={date} onChange={e=>setDate(e.target.value)} style={inp()}/></div>
           <div><div style={{fontSize:10,color:C.textDim,marginBottom:3}}>Weight (kg)</div><input type="number" step="0.1" value={val} placeholder="78.5" onChange={e=>setVal(e.target.value)} style={inp()}/></div>
           <button onClick={add} style={{background:C.weight,color:C.bg0,border:"none",borderRadius:7,padding:"9px 14px",fontSize:14,fontWeight:700,cursor:"pointer"}}>+</button>
         </div>
@@ -1038,7 +1038,7 @@ export default function App(){
       <div style={{background:`linear-gradient(135deg,${C.bg2} 0%,${C.bg0} 100%)`,borderBottom:`1px solid ${C.border}`,padding:"22px 18px 16px",transition:"background 140ms ease,border-color 140ms ease"}}>
         <div style={{maxWidth:720,margin:"0 auto"}}>
           <div style={{fontSize:10,letterSpacing:"0.2em",color:C.textDim,textTransform:"uppercase",marginBottom:4}}>Training Program</div>
-          <h1 style={{margin:0,fontSize:22,fontWeight:700,letterSpacing:"-0.02em",color:C.textPrimary}}>Estian's Dashboard</h1>
+          <h1 style={{margin:0,fontSize:22,fontWeight:700,letterSpacing:"-0.02em",color:C.textPrimary}}>Dashboard</h1>
           <p style={{margin:"4px 0 0",fontSize:12,color:C.textSec}}>Strength · Aesthetics · Running · Surfing</p>
           <div style={{marginTop:12,display:"flex",flexWrap:"wrap",gap:8,alignItems:"center"}}>
             <span style={{fontSize:11,letterSpacing:"0.12em",textTransform:"uppercase",color:C.textDim}}>Theme</span>
